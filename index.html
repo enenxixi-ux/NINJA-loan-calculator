@@ -1,0 +1,374 @@
+<!--
+  Project: 貸款計算器 (Shinobi Max v0.1)
+  Copyright (c) 2025-2030 [MS.AKA]
+  Licensed under the MIT License
+  
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+  試算結果僅供參考，實際以銀行估算為準。
+-->
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta property="og:title" content="🥷 忍者貸款試算器">
+<meta property="og:description" content="影之計算，精準掌握財務利息">
+<meta property="og:image" content="https://github.com/enenxixi-ux/sakura-loan-calculator/blob/main/Sakura貸款試算.png">
+<meta property="og:url" content="https://enenxixi-ux.github.io/sakura-loan-calculator/">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>貸款計算器 ｜ Loan Calculator (Shinobi)</title>
+
+<!-- 引入截圖工具庫 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Inter:wght@100;200;300;400;500;600&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg-color:     #F2F2F2; /* 淺灰背景 */
+    --black:        #000000; /* 純黑 */
+    --ninja-grey:   #4A4A4A; /* 飛鏢深灰 */
+    --mid-grey:     #888888; /* 中灰 */
+    --light-grey:   #DDDDDD; /* 邊框灰 */
+    --white:        #FFFFFF;
+    --shadow:       0 10px 30px rgba(0, 0, 0, 0.15);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  body {
+    background: var(--bg-color);
+    color: var(--black);
+    /* 採用細黑體字型風格 */
+    font-family: "PingFang TC", "Lantinghei TC", "Microsoft JhengHei Light", "Microsoft JhengHei", sans-serif;
+    font-weight: 200;
+    min-height: 100vh;
+    padding-bottom: 80px;
+    overflow-x: hidden;
+  }
+
+  input::-webkit-outer-spin-button,
+  input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number] { -moz-appearance: textfield; }
+
+  /* ── 忍者飛鏢特效 (極低流速) ── */
+  #ninja-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .shuriken {
+    position: absolute;
+    background: var(--ninja-grey);
+    opacity: 0.6;
+    animation: shoot linear forwards;
+  }
+  .type1 { clip-path: polygon(50% 0%, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0% 50%, 40% 40%); }
+  .type2 { clip-path: polygon(50% 0%, 65% 15%, 50% 30%, 85% 35%, 70% 50%, 100% 50%, 70% 65%, 85% 85%, 50% 70%, 35% 85%, 15% 65%, 0% 50%, 30% 50%, 15% 35%, 35% 15%); }
+  .type3 { clip-path: polygon(50% 0%, 65% 45%, 100% 80%, 50% 65%, 0% 80%, 35% 45%); }
+
+  @keyframes shoot {
+    0% { transform: translate(-100px, 110vh) rotate(0deg); opacity: 1; }
+    100% { transform: translate(120vw, -20vh) rotate(1080deg); opacity: 1; }
+  }
+
+  /* ── 橫幅修正：防撞彈性佈局 ── */
+  header {
+    background: var(--black);
+    width: 65%;
+    margin: 0 auto;
+    padding: 25px 15px;
+    position: relative;
+    border-bottom: 3px solid var(--mid-grey);
+    border-radius: 0 0 10px 10px;
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .header-title {
+    flex: 1;
+    text-align: center;
+    min-width: 0;
+  }
+  header h1 {
+    font-size: 19px;
+    color: var(--white);
+    letter-spacing: 0.15em;
+    font-weight: 200;
+    white-space: nowrap;
+  }
+  header h1 span {
+    display: block;
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    opacity: 0.5;
+    margin-top: 4px;
+    text-transform: uppercase;
+  }
+
+  /* ── 對稱按鈕設計 ── */
+  .btn-ui {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    color: var(--white);
+    width: 78px;
+    height: 30px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 200;
+  }
+  .btn-ui:hover { background: var(--white); color: var(--black); }
+  .btn-ui:active { transform: scale(0.9); }
+
+  .wrap { position: relative; z-index: 2; padding: 24px 20px; max-width: 520px; margin: 0 auto; }
+
+  /* ── 輸入格與標籤置中 ── */
+  .card {
+    background: var(--white);
+    padding: 25px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--black);
+  }
+  .input-grid { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 15px; }
+  .field label {
+    display: block; 
+    font-size: 10px; 
+    font-weight: 600; 
+    color: var(--black); 
+    margin-bottom: 8px;
+    text-align: center; /* 標籤置中 */
+  }
+  .input-wrap { position: relative; }
+  .input-wrap input {
+    width: 100%; border: 1px solid var(--light-grey); border-radius: 0px;
+    padding: 12px; font-size: 18px; font-family: 'DM Mono', monospace;
+    color: var(--black); outline: none; background: var(--white);
+    transition: border-color 0.3s;
+  }
+  .input-wrap input:focus { border-color: var(--black); }
+  .input-unit {
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    font-size: 11px; color: var(--mid-grey); pointer-events: none;
+  }
+
+  /* ── 結果摘要 ── */
+  .summary { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+  .sum-box {
+    background: var(--white); border: 1px solid var(--black); padding: 20px;
+    text-align: center; border-top: 5px solid var(--black);
+  }
+  .sum-label { font-size: 10px; color: var(--mid-grey); margin-bottom: 8px; font-weight: 600; }
+  .sum-value { font-size: 22px; font-family: 'DM Mono', monospace; color: var(--black); font-weight: 600; }
+  .sum-value span { font-size: 11px; margin-left: 2px; }
+
+  /* ── 明細表 ── */
+  .table-container {
+    background: var(--white); border: 1px solid var(--black); overflow: hidden;
+  }
+  .table-head { background: var(--black); display: grid; grid-template-columns: 50px 1fr 1fr 1fr; padding: 12px 10px; }
+  .th { font-size: 10px; color: var(--white); font-weight: 300; text-align: right; }
+  .th:first-child { text-align: left; }
+  .table-body { max-height: 250px; overflow-y: auto; }
+  .tr { display: grid; grid-template-columns: 50px 1fr 1fr 1fr; padding: 12px 10px; border-bottom: 1px solid var(--light-grey); }
+  .td { font-size: 12px; font-family: 'DM Mono', monospace; text-align: right; }
+  .td:first-child { text-align: left; color: var(--mid-grey); }
+
+  /* ── 頁尾 ── */
+  .footer {
+    text-align: center;
+    font-size: 13px;
+    color: var(--black);
+    margin-top: 50px;
+    letter-spacing: 0.1em;
+    font-weight: 400;
+  }
+  .footer .note {
+    font-size: 10px;
+    color: var(--mid-grey);
+    margin-top: 8px;
+    line-height: 1.6;
+    font-weight: 200;
+  }
+
+  @media (max-width: 600px) { 
+    header { width: 95%; padding: 20px 10px; } 
+    header h1 { font-size: 17px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="ninja-canvas"></div>
+
+<header>
+  <button class="btn-ui" onclick="takeScreenshot()">截圖</button>
+  <div class="header-title">
+    <h1>貸款計算器 <span>Shinobi Pro Edition</span></h1>
+  </div>
+  <button class="btn-ui" onclick="resetForm()">清除重算</button>
+</header>
+
+<div class="wrap">
+  <div class="card">
+    <div class="input-grid">
+      <div class="field">
+        <label>貸款金額</label>
+        <div class="input-wrap">
+          <input type="number" id="principal" placeholder="0" step="1" inputmode="numeric">
+          <span class="input-unit">萬元</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>還款期數</label>
+        <div class="input-wrap">
+          <input type="number" id="periods" placeholder="0" step="1" inputmode="numeric">
+          <span class="input-unit">期</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>年利率</label>
+        <div class="input-wrap">
+          <input type="number" id="rate" placeholder="0" step="0.01" inputmode="decimal">
+          <span class="input-unit">%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="summary">
+    <div class="sum-box">
+      <div class="sum-label">每月還款</div>
+      <div class="sum-value" id="monthly">—<span>元</span></div>
+    </div>
+    <div class="sum-box">
+      <div class="sum-label">總計利息</div>
+      <div class="sum-value" id="total_interest">—<span>元</span></div>
+    </div>
+  </div>
+
+  <div class="table-container">
+    <div class="table-head">
+      <div class="th">期數</div>
+      <div class="th">月付額</div>
+      <div class="th">利息</div>
+      <div class="th">剩餘本金</div>
+    </div>
+    <div id="table_body" class="table-body"></div>
+  </div>
+
+  <div class="footer">
+    SHINOBI LOAN CALCULATOR
+    <div class="note">
+      本試算採本息均攤法計算，僅供參考，實際請以銀行核貸為準。<br>
+      © 2025-2030 [MS.AKA] · Licensed under MIT
+    </div>
+  </div>
+</div>
+
+<script>
+// 1. 飛鏢系統 (流速慢 50%)
+function shootShuriken() {
+  const container = document.getElementById('ninja-canvas');
+  const shuriken = document.createElement('div');
+  const type = Math.floor(Math.random() * 3) + 1;
+  shuriken.className = `shuriken type${type}`;
+  
+  const size = Math.random() * 10 + 18; 
+  shuriken.style.width = size + 'px';
+  shuriken.style.height = size + 'px';
+  shuriken.style.left = (Math.random() * 70 - 20) + 'vw';
+  
+  // 速度調整：原本約 1.2~3.6s，現在調慢為 2.4~7.2s
+  const speedPool = [
+    { min: 2.4, max: 4.0 }, 
+    { min: 3.6, max: 6.0 }, 
+    { min: 4.4, max: 7.2 }  
+  ];
+  const selected = speedPool[Math.floor(Math.random() * 3)];
+  const duration = Math.random() * (selected.max - selected.min) + selected.min;
+  
+  shuriken.style.animationDuration = duration + 's';
+  container.appendChild(shuriken);
+  setTimeout(() => shuriken.remove(), duration * 1000);
+}
+setInterval(shootShuriken, 600);
+
+// 2. 截圖功能
+function takeScreenshot() {
+  const btns = document.querySelectorAll('.btn-ui');
+  btns.forEach(b => b.style.visibility = 'hidden');
+
+  html2canvas(document.body, {
+    backgroundColor: "#F2F2F2",
+    scale: 2 
+  }).then(canvas => {
+    btns.forEach(b => b.style.visibility = 'visible');
+    const link = document.createElement('a');
+    link.download = 'Loan_Shinobi_Report.png';
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+    alert("截圖已生成。");
+  });
+}
+
+// 3. 清除歸零
+function resetForm() {
+  document.getElementById('principal').value = '';
+  document.getElementById('periods').value = '';
+  document.getElementById('rate').value = '';
+  calculate();
+}
+
+function fmt(n) { return Math.round(n).toLocaleString('zh-TW'); }
+
+// 4. 精確計算
+function calculate() {
+  const pVal = document.getElementById('principal').value;
+  const nVal = document.getElementById('periods').value;
+  const rVal = document.getElementById('rate').value;
+
+  if (!pVal || !nVal || !rVal) {
+    document.getElementById('monthly').innerHTML = '—<span>元</span>';
+    document.getElementById('total_interest').innerHTML = '—<span>元</span>';
+    document.getElementById('table_body').innerHTML = '';
+    return;
+  }
+
+  const P = parseFloat(pVal) * 10000;
+  const n = parseInt(nVal);
+  const r = (parseFloat(rVal) / 100) / 12;
+
+  let mp = (r === 0) ? P / n : P * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+  document.getElementById('monthly').innerHTML = fmt(mp) + '<span>元</span>';
+
+  let balance = P, totalInterest = 0, html = '';
+  for (let i = 1; i <= n; i++) {
+    const interest = balance * r;
+    const principal = mp - interest;
+    totalInterest += interest;
+    balance -= principal;
+    if (i === n) balance = 0;
+    html += `<div class="tr"><div class="td">${i}</div><div class="td">${fmt(mp)}</div><div class="td" style="color:var(--ninja-grey)">${fmt(interest)}</div><div class="td">${fmt(Math.max(0, balance))}</div></div>`;
+  }
+  document.getElementById('total_interest').innerHTML = fmt(totalInterest) + '<span>元</span>';
+  document.getElementById('table_body').innerHTML = html;
+}
+
+['principal', 'periods', 'rate'].forEach(id => {
+  document.getElementById(id).addEventListener('input', calculate);
+});
+
+calculate();
+</script>
+</body>
+</html>
