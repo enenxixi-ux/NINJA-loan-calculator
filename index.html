@@ -213,7 +213,7 @@
 <header>
   <button class="btn-ui" onclick="takeScreenshot()">截圖</button>
   <div class="header-title">
-    <h1>貸款計算器 <span>Shinobi Pro Edition</span></h1>
+    <h1>貸款計算器 <span>NINJA Pro Edition</span></h1>
   </div>
   <button class="btn-ui" onclick="resetForm()">清除重算</button>
 </header>
@@ -267,7 +267,7 @@
   </div>
 
   <div class="footer">
-    SHINOBI LOAN CALCULATOR
+    NINJA LOAN CALCULATOR
     <div class="note">
       本試算採本息均攤法計算，僅供參考，實際請以銀行核貸為準。<br>
       © 2025-2030 [MS.AKA] · Licensed under MIT
@@ -314,7 +314,7 @@ function takeScreenshot() {
   }).then(canvas => {
     btns.forEach(b => b.style.visibility = 'visible');
     const link = document.createElement('a');
-    link.download = 'Loan_Shinobi_Report.png';
+    link.download = 'Loan_NINJA_Report.png';
     link.href = canvas.toDataURL("image/png");
     link.click();
     alert("截圖已生成。");
@@ -374,6 +374,6 @@ calculate();
 </html>
 <div class="footer">
   © 2025-2030 [MS.AKA] · Licensed under MIT<br>
-  SAKURA PRECISION CALCULATOR<br>
+  NINJA PRECISION CALCULATOR<br>
   </div>
 </div>
