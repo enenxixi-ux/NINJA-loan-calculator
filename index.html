@@ -1,5 +1,5 @@
 <!--
-  Project: 貸款計算器 (NINJA Max v0.1)
+  Project: 貸款計算器 (Shinobi Max v0.3)
   Copyright (c) 2025-2030 [MS.AKA]
   Licensed under the MIT License
   
@@ -12,10 +12,10 @@
 <meta property="og:title" content="🥷 忍者貸款試算器">
 <meta property="og:description" content="影之計算，精準掌握財務利息">
 <meta property="og:image" content="https://github.com/enenxixi-ux/sakura-loan-calculator/blob/main/Sakura貸款試算.png">
-<meta property="og:url" content="https://enenxixi-ux.github.io/sakura-loan-calculator/">
+<meta property="og:url" content="https://enenxixi-ux.github.io/NINJA-loan-calculator/">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>貸款計算器 ｜ Loan Calculator (NINJA)</title>
+<title>貸款計算器 ｜ Loan Calculator (Shinobi)</title>
 
 <!-- 引入截圖工具庫 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -26,6 +26,7 @@
     --bg-color:     #F2F2F2; /* 淺灰背景 */
     --black:        #000000; /* 純黑 */
     --ninja-grey:   #4A4A4A; /* 飛鏢深灰 */
+    --blade-light:  #757575; /* 降低灰階20%後的電鋸色 */
     --mid-grey:     #888888; /* 中灰 */
     --light-grey:   #DDDDDD; /* 邊框灰 */
     --white:        #FFFFFF;
@@ -37,7 +38,6 @@
   body {
     background: var(--bg-color);
     color: var(--black);
-    /* 採用細黑體字型風格 */
     font-family: "PingFang TC", "Lantinghei TC", "Microsoft JhengHei Light", "Microsoft JhengHei", sans-serif;
     font-weight: 200;
     min-height: 100vh;
@@ -49,22 +49,35 @@
   input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   input[type=number] { -moz-appearance: textfield; }
 
-  /* ── 忍者飛鏢特效 (極低流速) ── */
+  /* ── 忍者飛鏢畫布 (底層) ── */
   #ninja-canvas {
     position: fixed;
     top: 0; left: 0;
     width: 100%; height: 100%;
     pointer-events: none;
-    z-index: 1;
+    z-index: 0;
   }
   .shuriken {
     position: absolute;
     background: var(--ninja-grey);
-    opacity: 0.6;
+    opacity: 0.5;
     animation: shoot linear forwards;
   }
+
+  /* 類型 1: 經典四角 */
   .type1 { clip-path: polygon(50% 0%, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0% 50%, 40% 40%); }
-  .type2 { clip-path: polygon(50% 0%, 65% 25%, 100% 25%, 80% 50%, 100% 75%, 65% 75%, 50% 100%, 35% 75%, 0% 75%, 20% 50%, 0% 25%, 35% 25%); }
+
+  /* 類型 2: 電鋸盤片 (六角對齊 + 中間鏤空 + 灰階降低20%) */
+  .type2 { 
+    background: var(--blade-light); /* 較淺的灰色 */
+    /* 精準對稱的六角形座標 */
+    clip-path: polygon(50% 0%, 62% 35%, 93% 25%, 75% 50%, 93% 75%, 62% 65%, 50% 100%, 38% 65%, 7% 75%, 25% 50%, 7% 25%, 38% 35%); 
+    /* 圓形鏤空遮罩：在中心 20% 半徑處挖洞 */
+    -webkit-mask-image: radial-gradient(circle, transparent 20%, black 21%);
+    mask-image: radial-gradient(circle, transparent 20%, black 21%);
+  }
+
+  /* 類型 3: 三尖刃 */
   .type3 { clip-path: polygon(50% 0%, 65% 45%, 100% 80%, 50% 65%, 0% 80%, 35% 45%); }
 
   @keyframes shoot {
@@ -72,13 +85,14 @@
     100% { transform: translate(120vw, -20vh) rotate(1080deg); opacity: 1; }
   }
 
-  /* ── 橫幅修正：防撞彈性佈局 ── */
+  /* ── 橫幅 (三欄式防撞佈局) ── */
   header {
     background: var(--black);
     width: 65%;
     margin: 0 auto;
     padding: 25px 15px;
     position: relative;
+    z-index: 10;
     border-bottom: 3px solid var(--mid-grey);
     border-radius: 0 0 10px 10px;
     box-shadow: var(--shadow);
@@ -87,11 +101,7 @@
     justify-content: space-between;
     gap: 10px;
   }
-  .header-title {
-    flex: 1;
-    text-align: center;
-    min-width: 0;
-  }
+  .header-title { flex: 1; text-align: center; min-width: 0; }
   header h1 {
     font-size: 19px;
     color: var(--white);
@@ -108,7 +118,7 @@
     text-transform: uppercase;
   }
 
-  /* ── 對稱按鈕設計 ── */
+  /* ── 按鍵設計 ── */
   .btn-ui {
     background: transparent;
     border: 1px solid rgba(255, 255, 255, 0.4);
@@ -126,7 +136,6 @@
     font-weight: 200;
   }
   .btn-ui:hover { background: var(--white); color: var(--black); }
-  .btn-ui:active { transform: scale(0.9); }
 
   .wrap { position: relative; z-index: 2; padding: 24px 20px; max-width: 520px; margin: 0 auto; }
 
@@ -141,25 +150,17 @@
   }
   .input-grid { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 15px; }
   .field label {
-    display: block; 
-    font-size: 10px; 
-    font-weight: 600; 
-    color: var(--black); 
-    margin-bottom: 8px;
-    text-align: center; /* 標籤置中 */
+    display: block; font-size: 10px; font-weight: 600; color: var(--black);
+    margin-bottom: 8px; text-align: center;
   }
   .input-wrap { position: relative; }
   .input-wrap input {
     width: 100%; border: 1px solid var(--light-grey); border-radius: 0px;
     padding: 12px; font-size: 18px; font-family: 'DM Mono', monospace;
-    color: var(--black); outline: none; background: var(--white);
-    transition: border-color 0.3s;
+    color: var(--black); outline: none; transition: border-color 0.2s;
   }
   .input-wrap input:focus { border-color: var(--black); }
-  .input-unit {
-    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-    font-size: 11px; color: var(--mid-grey); pointer-events: none;
-  }
+  .input-unit { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 11px; color: var(--mid-grey); }
 
   /* ── 結果摘要 ── */
   .summary { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
@@ -169,22 +170,21 @@
   }
   .sum-label { font-size: 10px; color: var(--mid-grey); margin-bottom: 8px; font-weight: 600; }
   .sum-value { font-size: 22px; font-family: 'DM Mono', monospace; color: var(--black); font-weight: 600; }
-  .sum-value span { font-size: 11px; margin-left: 2px; }
 
   /* ── 明細表 ── */
-  .table-container {
-    background: var(--white); border: 1px solid var(--black); overflow: hidden;
-  }
+  .table-container { background: var(--white); border: 1px solid var(--black); overflow: hidden; }
   .table-head { background: var(--black); display: grid; grid-template-columns: 50px 1fr 1fr 1fr; padding: 12px 10px; }
-  .th { font-size: 10px; color: var(--white); font-weight: 300; text-align: right; }
+  .th { font-size: 10px; color: var(--white); text-align: right; font-weight: 300; }
   .th:first-child { text-align: left; }
   .table-body { max-height: 250px; overflow-y: auto; }
   .tr { display: grid; grid-template-columns: 50px 1fr 1fr 1fr; padding: 12px 10px; border-bottom: 1px solid var(--light-grey); }
-  .td { font-size: 12px; font-family: 'DM Mono', monospace; text-align: right; }
+  .td { font-size: 12px; font-family: 'DM Mono', monospace; text-align: right; color: var(--black); }
   .td:first-child { text-align: left; color: var(--mid-grey); }
 
   /* ── 頁尾 ── */
   .footer {
+    position: relative;
+    z-index: 10;
     text-align: center;
     font-size: 13px;
     color: var(--black);
@@ -213,7 +213,7 @@
 <header>
   <button class="btn-ui" onclick="takeScreenshot()">截圖</button>
   <div class="header-title">
-    <h1>貸款計算器 <span>NINJA Pro Edition</span></h1>
+    <h1>貸款計算器 <span>Shinobi Pro Edition</span></h1>
   </div>
   <button class="btn-ui" onclick="resetForm()">清除重算</button>
 </header>
@@ -248,11 +248,11 @@
   <div class="summary">
     <div class="sum-box">
       <div class="sum-label">每月還款</div>
-      <div class="sum-value" id="monthly">—<span>元</span></div>
+      <div class="sum-value" id="monthly">—</div>
     </div>
     <div class="sum-box">
       <div class="sum-label">總計利息</div>
-      <div class="sum-value" id="total_interest">—<span>元</span></div>
+      <div class="sum-value" id="total_interest">—</div>
     </div>
   </div>
 
@@ -276,23 +276,23 @@
 </div>
 
 <script>
-// 1. 飛鏢系統 (流速慢 50%)
+// 1. 飛鏢發射系統
 function shootShuriken() {
   const container = document.getElementById('ninja-canvas');
   const shuriken = document.createElement('div');
   const type = Math.floor(Math.random() * 3) + 1;
   shuriken.className = `shuriken type${type}`;
   
-  const size = Math.random() * 10 + 18; 
+  const size = Math.random() * 10 + 20; 
   shuriken.style.width = size + 'px';
   shuriken.style.height = size + 'px';
   shuriken.style.left = (Math.random() * 70 - 20) + 'vw';
   
-  // 速度調整：原本約 1.2~3.6s，現在調慢為 2.4~7.2s
+  // 緩慢流速
   const speedPool = [
-    { min: 2.4, max: 4.0 }, 
-    { min: 3.6, max: 6.0 }, 
-    { min: 4.4, max: 7.2 }  
+    { min: 2.5, max: 4.0 }, 
+    { min: 3.8, max: 6.0 }, 
+    { min: 4.5, max: 7.5 }  
   ];
   const selected = speedPool[Math.floor(Math.random() * 3)];
   const duration = Math.random() * (selected.max - selected.min) + selected.min;
@@ -301,7 +301,7 @@ function shootShuriken() {
   container.appendChild(shuriken);
   setTimeout(() => shuriken.remove(), duration * 1000);
 }
-setInterval(shootShuriken, 600);
+setInterval(shootShuriken, 700);
 
 // 2. 截圖功能
 function takeScreenshot() {
@@ -314,14 +314,13 @@ function takeScreenshot() {
   }).then(canvas => {
     btns.forEach(b => b.style.visibility = 'visible');
     const link = document.createElement('a');
-    link.download = 'Loan_NINJA_Report.png';
+    link.download = 'Loan_Shinobi_Report.png';
     link.href = canvas.toDataURL("image/png");
     link.click();
-    alert("截圖已生成。");
   });
 }
 
-// 3. 清除歸零
+// 3. 清除重算
 function resetForm() {
   document.getElementById('principal').value = '';
   document.getElementById('periods').value = '';
@@ -331,15 +330,15 @@ function resetForm() {
 
 function fmt(n) { return Math.round(n).toLocaleString('zh-TW'); }
 
-// 4. 精確計算
+// 4. 計算邏輯
 function calculate() {
   const pVal = document.getElementById('principal').value;
   const nVal = document.getElementById('periods').value;
   const rVal = document.getElementById('rate').value;
 
   if (!pVal || !nVal || !rVal) {
-    document.getElementById('monthly').innerHTML = '—<span>元</span>';
-    document.getElementById('total_interest').innerHTML = '—<span>元</span>';
+    document.getElementById('monthly').innerText = '—';
+    document.getElementById('total_interest').innerText = '—';
     document.getElementById('table_body').innerHTML = '';
     return;
   }
@@ -349,7 +348,7 @@ function calculate() {
   const r = (parseFloat(rVal) / 100) / 12;
 
   let mp = (r === 0) ? P / n : P * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
-  document.getElementById('monthly').innerHTML = fmt(mp) + '<span>元</span>';
+  document.getElementById('monthly').innerText = fmt(mp) + ' 元';
 
   let balance = P, totalInterest = 0, html = '';
   for (let i = 1; i <= n; i++) {
@@ -358,9 +357,9 @@ function calculate() {
     totalInterest += interest;
     balance -= principal;
     if (i === n) balance = 0;
-    html += `<div class="tr"><div class="td">${i}</div><div class="td">${fmt(mp)}</div><div class="td" style="color:var(--ninja-grey)">${fmt(interest)}</div><div class="td">${fmt(Math.max(0, balance))}</div></div>`;
+    html += `<div class="tr"><div class="td">${i}</div><div class="td" style="font-weight:600">${fmt(mp)}</div><div class="td" style="color:var(--ninja-grey)">${fmt(interest)}</div><div class="td">${fmt(Math.max(0, balance))}</div></div>`;
   }
-  document.getElementById('total_interest').innerHTML = fmt(totalInterest) + '<span>元</span>';
+  document.getElementById('total_interest').innerText = fmt(totalInterest) + ' 元';
   document.getElementById('table_body').innerHTML = html;
 }
 
@@ -372,5 +371,3 @@ calculate();
 </script>
 </body>
 </html>
-<div class="footer">
-  </div>
